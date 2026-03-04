@@ -23,12 +23,13 @@ const pieCaption = document.getElementById("pieCaption");
 const slidersWrap = document.getElementById("sliders");
 const latestAccuracy = document.getElementById("latestAccuracy");
 const historyList = document.getElementById("historyList");
-const shareText = document.getElementById("shareText");
+const shareArea = document.getElementById("shareArea");
+const milestoneStats = document.getElementById("milestoneStats");
+const peakAccuracyDisplay = document.getElementById("peakAccuracyDisplay");
 
 const guessBtn = document.getElementById("guessBtn");
 const randomizeBtn = document.getElementById("randomizeBtn");
 const newGameBtn = document.getElementById("newGameBtn");
-const copyShareBtn = document.getElementById("copyShareBtn");
 const shareImageBtn = document.getElementById("shareImageBtn");
 
 const shareModal = document.getElementById("shareModal");
@@ -79,21 +80,6 @@ newGameBtn.addEventListener("click", () => {
   renderAll();
 });
 
-copyShareBtn.addEventListener("click", async () => {
-  try {
-    await navigator.clipboard.writeText(shareText.textContent);
-    copyShareBtn.textContent = "Copied";
-    setTimeout(() => {
-      copyShareBtn.textContent = "Copy Text";
-    }, 1100);
-  } catch {
-    copyShareBtn.textContent = "Copy failed";
-    setTimeout(() => {
-      copyShareBtn.textContent = "Copy Text";
-    }, 1100);
-  }
-});
-
 shareImageBtn.addEventListener("click", () => {
   if (state.guesses.length === 0) return;
   
@@ -123,6 +109,22 @@ window.addEventListener("click", (e) => {
   }
 });
 
+function getPeakAccuracy() {
+  if (state.guesses.length === 0) return 0;
+  return Math.max(...state.guesses.map((g) => g.score));
+}
+
+function getShareText() {
+  const lines = MILESTONES.map((m) => {
+    const value = state.reached[m];
+    if (!value) return `${m}%: not yet`;
+    return `${m}%: ${value} ${value === 1 ? "guess" : "guesses"}`;
+  });
+  
+  lines.push(`\nPeak accuracy: ${formatScore(getPeakAccuracy())}%`);
+  return lines.join("\n");
+}
+
 finalShareBtn.addEventListener("click", async () => {
   if (!currentShareCanvas) return;
 
@@ -131,11 +133,13 @@ finalShareBtn.addEventListener("click", async () => {
     const blob = await (await fetch(dataUrl)).blob();
     const file = new File([blob], "chromix-result.png", { type: "image/png" });
 
+    const shareTextContent = getShareText();
+
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       await navigator.share({
         files: [file],
         title: "Chromix Result",
-        text: `I matched a color with ${formatScore(state.guesses[0].score)}% accuracy!`,
+        text: shareTextContent,
       });
     } else {
       const link = document.createElement("a");
@@ -329,15 +333,24 @@ function renderHistory() {
 }
 
 function renderShare() {
-  const lines = MILESTONES.map((m) => {
-    const value = state.reached[m];
-    if (!value) {
-      return `${m}%: not yet`;
-    }
-    return `${m}%: ${value} ${value === 1 ? "guess" : "guesses"}`;
-  });
+  if (state.guesses.length === 0) {
+    if (shareArea) shareArea.style.display = "none";
+    return;
+  }
+  
+  if (shareArea) shareArea.style.display = "flex";
 
-  shareText.textContent = lines.join("\n");
+  if (milestoneStats) {
+    milestoneStats.textContent = MILESTONES.map((m) => {
+      const value = state.reached[m];
+      if (!value) return `${m}%: not yet`;
+      return `${m}%: ${value} ${value === 1 ? "guess" : "guesses"}`;
+    }).join("\n");
+  }
+
+  if (peakAccuracyDisplay) {
+    peakAccuracyDisplay.textContent = `Peak accuracy: ${formatScore(getPeakAccuracy())}%`;
+  }
 }
 
 function trackMilestones(score) {

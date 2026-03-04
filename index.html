@@ -45,29 +45,26 @@
         <ul id="historyList" class="history"></ul>
       </section>
 
-      <section class="share">
-        <div class="results-head">
-          <h2>Share</h2>
-          <div class="button-row" style="margin-top: 0;">
-            <button id="copyShareBtn" class="secondary">Copy Text</button>
-            <button id="shareImageBtn" class="secondary">Share Image</button>
-          </div>
-        </div>
-        <pre id="shareText" class="share-box"></pre>
-      </section>
+      <div id="shareArea" class="share-area" style="display: none;">
+        <button id="shareImageBtn" class="secondary">Share</button>
+      </div>
     </main>
 
     <div id="shareModal" class="modal-overlay">
       <div class="modal-content">
         <div class="modal-header">
-          <h2>Share Image Preview</h2>
+          <h2>Share Preview</h2>
           <button id="closeModalBtn" class="close-btn">&times;</button>
         </div>
-        <div class="modal-body">
+        <div class="modal-body share-modal-body">
           <div id="canvasContainer" class="canvas-scroll-container"></div>
+          <div class="share-text-stats">
+            <div id="milestoneStats" class="milestone-stats"></div>
+            <p id="peakAccuracyDisplay" class="peak-accuracy-text"></p>
+          </div>
         </div>
         <div class="modal-footer">
-          <button id="finalShareBtn" class="primary">Share / Download</button>
+          <button id="finalShareBtn" class="primary">Share</button>
         </div>
       </div>
     </div>
