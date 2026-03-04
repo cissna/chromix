@@ -50,6 +50,8 @@ const state = {
   submittedRGB: null,
 };
 
+updateURL();
+
 const targetSwatch = document.getElementById("targetSwatch");
 const pieChart = document.getElementById("pieChart");
 const pieCaption = document.getElementById("pieCaption");
@@ -109,9 +111,18 @@ newGameBtn.addEventListener("click", () => {
   state.reached = {};
   state.pieMode = "segments";
   state.submittedRGB = null;
+  updateURL();
   syncSliderUI();
   renderAll();
 });
+
+function updateURL() {
+  const targetRGB = mixToRGB(state.targetWeights);
+  const code = encodeColor(targetRGB);
+  const url = new URL(window.location.href);
+  url.searchParams.set("c", code);
+  window.history.replaceState({}, "", url);
+}
 
 shareImageBtn.addEventListener("click", () => {
   if (state.guesses.length === 0) return;
