@@ -8,8 +8,41 @@ const PIGMENTS = [
 
 const MILESTONES = [75, 90, 95, 97, 98, 99];
 
+function encodeColor(rgb) {
+  return rgb
+    .map((v) => v.toString(36).padStart(2, "0"))
+    .join("")
+    .toUpperCase();
+}
+
+function decodeColor(code) {
+  if (!code || code.length !== 6) return null;
+  try {
+    const r = parseInt(code.slice(0, 2), 36);
+    const g = parseInt(code.slice(2, 4), 36);
+    const b = parseInt(code.slice(4, 6), 36);
+    if ([r, g, b].every((v) => v >= 0 && v <= 255)) {
+      return { cyan: 0, magenta: 0, yellow: 0, white: 0, black: 0, customRGB: [r, g, b] };
+    }
+  } catch (e) {
+    return null;
+  }
+  return null;
+}
+
+function getInitialTarget() {
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get("c");
+  const decoded = decodeColor(code);
+  if (decoded) {
+    // We store the custom RGB directly in a way mixToRGB can handle or bypass
+    return decoded;
+  }
+  return randomWeights();
+}
+
 const state = {
-  targetWeights: randomWeights(),
+  targetWeights: getInitialTarget(),
   sliderValues: randomWeights(),
   guesses: [],
   reached: {},
@@ -122,6 +155,13 @@ function getShareText() {
   });
   
   lines.push(`\nPeak accuracy: ${formatScore(getPeakAccuracy())}%`);
+
+  const targetRGB = mixToRGB(state.targetWeights);
+  const code = encodeColor(targetRGB);
+  // Strip existing query params for the share link
+  const baseUrl = window.location.origin + window.location.pathname;
+  lines.push(`\nChallenge Link: ${baseUrl}?c=${code}`);
+  
   return lines.join("\n");
 }
 
@@ -341,15 +381,13 @@ function renderShare() {
   if (shareArea) shareArea.style.display = "flex";
 
   if (milestoneStats) {
-    milestoneStats.textContent = MILESTONES.map((m) => {
-      const value = state.reached[m];
-      if (!value) return `${m}%: not yet`;
-      return `${m}%: ${value} ${value === 1 ? "guess" : "guesses"}`;
-    }).join("\n");
+    milestoneStats.textContent = getShareText();
   }
 
+  // peakAccuracyDisplay is redundant now that getShareText() handles it,
+  // but let's keep it empty or remove it from the UI if it's too much.
   if (peakAccuracyDisplay) {
-    peakAccuracyDisplay.textContent = `Peak accuracy: ${formatScore(getPeakAccuracy())}%`;
+    peakAccuracyDisplay.textContent = "";
   }
 }
 
@@ -382,6 +420,7 @@ function normalizeWeights(raw) {
 }
 
 function mixToRGB(weightsPercent) {
+  if (weightsPercent.customRGB) return weightsPercent.customRGB;
   const accum = [0, 0, 0];
 
   for (const pigment of PIGMENTS) {
