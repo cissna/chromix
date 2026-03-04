@@ -29,6 +29,14 @@ const guessBtn = document.getElementById("guessBtn");
 const randomizeBtn = document.getElementById("randomizeBtn");
 const newGameBtn = document.getElementById("newGameBtn");
 const copyShareBtn = document.getElementById("copyShareBtn");
+const shareImageBtn = document.getElementById("shareImageBtn");
+
+const shareModal = document.getElementById("shareModal");
+const closeModalBtn = document.getElementById("closeModalBtn");
+const finalShareBtn = document.getElementById("finalShareBtn");
+const canvasContainer = document.getElementById("canvasContainer");
+
+let currentShareCanvas = null;
 
 buildSliders();
 renderAll();
@@ -76,15 +84,98 @@ copyShareBtn.addEventListener("click", async () => {
     await navigator.clipboard.writeText(shareText.textContent);
     copyShareBtn.textContent = "Copied";
     setTimeout(() => {
-      copyShareBtn.textContent = "Copy";
+      copyShareBtn.textContent = "Copy Text";
     }, 1100);
   } catch {
     copyShareBtn.textContent = "Copy failed";
     setTimeout(() => {
-      copyShareBtn.textContent = "Copy";
+      copyShareBtn.textContent = "Copy Text";
     }, 1100);
   }
 });
+
+shareImageBtn.addEventListener("click", () => {
+  if (state.guesses.length === 0) return;
+  
+  const canvas = generateShareImage();
+  if (!canvas) return;
+
+  currentShareCanvas = canvas;
+  
+  // Convert canvas to image for right-click support
+  const img = new Image();
+  img.src = canvas.toDataURL("image/png");
+  img.alt = "Chromix Game Results";
+  img.className = "preview-image";
+
+  canvasContainer.innerHTML = "";
+  canvasContainer.appendChild(img);
+  shareModal.classList.add("active");
+});
+
+closeModalBtn.addEventListener("click", () => {
+  shareModal.classList.remove("active");
+});
+
+window.addEventListener("click", (e) => {
+  if (e.target === shareModal) {
+    shareModal.classList.remove("active");
+  }
+});
+
+finalShareBtn.addEventListener("click", async () => {
+  if (!currentShareCanvas) return;
+
+  try {
+    const dataUrl = currentShareCanvas.toDataURL("image/png");
+    const blob = await (await fetch(dataUrl)).blob();
+    const file = new File([blob], "chromix-result.png", { type: "image/png" });
+
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({
+        files: [file],
+        title: "Chromix Result",
+        text: `I matched a color with ${formatScore(state.guesses[0].score)}% accuracy!`,
+      });
+    } else {
+      const link = document.createElement("a");
+      link.download = "chromix-result.png";
+      link.href = dataUrl;
+      link.click();
+    }
+  } catch (err) {
+    console.error("Error sharing image:", err);
+  }
+});
+
+function generateShareImage() {
+  // Use reverse so leftmost is first guess, rightmost is most recent
+  const guesses = [...state.guesses].reverse();
+  // Cap at 100
+  const limitedGuesses = guesses.slice(-100);
+  if (limitedGuesses.length === 0) return null;
+
+  const squareSize = 80;
+  const canvas = document.createElement("canvas");
+  canvas.width = limitedGuesses.length * squareSize;
+  canvas.height = squareSize * 2;
+  const ctx = canvas.getContext("2d");
+
+  const targetRGB = mixToRGB(state.targetWeights);
+
+  // Bottom row: Target color (one long rectangle)
+  ctx.fillStyle = rgbCss(targetRGB);
+  ctx.fillRect(0, squareSize, canvas.width, squareSize);
+
+  // Top row: Successive guesses
+  limitedGuesses.forEach((guess, i) => {
+    const x = i * squareSize;
+    ctx.fillStyle = rgbCss(guess.rgb);
+    ctx.fillRect(x, 0, squareSize, squareSize);
+  });
+
+  return canvas;
+}
 
 function buildSliders() {
   const fragment = document.createDocumentFragment();

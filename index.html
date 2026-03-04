@@ -48,11 +48,29 @@
       <section class="share">
         <div class="results-head">
           <h2>Share</h2>
-          <button id="copyShareBtn" class="secondary">Copy</button>
+          <div class="button-row" style="margin-top: 0;">
+            <button id="copyShareBtn" class="secondary">Copy Text</button>
+            <button id="shareImageBtn" class="secondary">Share Image</button>
+          </div>
         </div>
         <pre id="shareText" class="share-box"></pre>
       </section>
     </main>
+
+    <div id="shareModal" class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Share Image Preview</h2>
+          <button id="closeModalBtn" class="close-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div id="canvasContainer" class="canvas-scroll-container"></div>
+        </div>
+        <div class="modal-footer">
+          <button id="finalShareBtn" class="primary">Share / Download</button>
+        </div>
+      </div>
+    </div>
 
     <script src="app.js"></script>
   </body>
