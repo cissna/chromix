@@ -43,7 +43,7 @@ function getInitialTarget() {
 
 const state = {
   targetWeights: getInitialTarget(),
-  sliderValues: randomWeights(),
+  sliderValues: zeroWeights(),
   guesses: [],
   reached: {},
   pieMode: "segments",
@@ -104,7 +104,7 @@ guessBtn.addEventListener("click", () => {
 
 newGameBtn.addEventListener("click", () => {
   state.targetWeights = randomWeights();
-  state.sliderValues = randomWeights();
+  state.sliderValues = zeroWeights();
   state.guesses = [];
   state.reached = {};
   state.pieMode = "segments";
@@ -473,6 +473,10 @@ function randomWeights() {
   return Object.fromEntries(
     PIGMENTS.map((pigment, idx) => [pigment.key, (values[idx] / sum) * 100])
   );
+}
+
+function zeroWeights() {
+  return Object.fromEntries(PIGMENTS.map((p) => [p.key, 0]));
 }
 
 function rgbCss(rgb) {
